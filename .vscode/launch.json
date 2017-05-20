@@ -9,9 +9,9 @@
             "remotePath": "",
             "port": 2345,
             "host": "127.0.0.1",
-            "program": "${fileDirname}",
+            "program": "/Users/berkersonmez/go/src/github.com/berkersonmez/tsp/tsp/main.go",
             "env": {},
-            "args": [],
+            "args": ["tsp_51_1.txt", "99999322234", "1", "2", "0.9", "51", "400"],
             "showLog": true
         }
     ]

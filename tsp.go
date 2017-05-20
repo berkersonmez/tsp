@@ -2,6 +2,8 @@ package tsp
 
 import (
 	"math"
+	"math/rand"
+	"errors"
 )
 
 // Node represents a node such as a city
@@ -14,7 +16,7 @@ type Node struct {
 // Tsp contains variables and common helper methods for solvers
 type Tsp struct {
 	Nodes    []Node
-	Seed     int
+	Seed     int64
 	Alpha    float64
 	Beta     float64
 	Ro       float64
@@ -23,11 +25,26 @@ type Tsp struct {
 	Dists    [][]float64
 	Pheros   [][]float64
 	Q        float64
+	Rand     *rand.Rand
+	DoneAntCount int
 }
 
 // Distance returns distance between nodes n1 and n2
 func (tsp *Tsp) Distance(n1, n2 *Node) float64 {
 	return math.Sqrt(math.Pow(n1.X-n2.X, 2) + math.Pow(n1.Y-n2.Y, 2))
+}
+
+// Length returns the length of the path
+func (tsp *Tsp) Length(nodes []Node) float64 {
+	current := &nodes[0]
+	totalLength := float64(0)
+	for i := range nodes {
+		prev := current
+		current = &nodes[i]
+		totalLength += tsp.Distance(prev, current)
+	}
+	totalLength += tsp.Distance(&nodes[0], current)
+	return totalLength
 }
 
 // AddNode adds a node to the tsp struct
@@ -55,8 +72,9 @@ func (tsp *Tsp) Initialize() {
 	for i := range tsp.Nodes {
 		tsp.Dists[i] = make([]float64, len(tsp.Nodes))
 		tsp.Pheros[i] = make([]float64, len(tsp.Nodes))
-
-		for j := range tsp.Dists[i] {
+	}
+	for i := 0; i < len(tsp.Nodes) - 1; i++ {
+		for j := i + 1; j < len(tsp.Nodes); j++ {
 			dist := tsp.Distance(&tsp.Nodes[i], &tsp.Nodes[j])
 			tsp.Dists[i][j] = dist
 			tsp.Dists[j][i] = dist
@@ -68,6 +86,7 @@ func (tsp *Tsp) Initialize() {
 		}
 	}
 	tsp.Q = minDist
+	tsp.Rand = rand.New(rand.NewSource(tsp.Seed))
 }
 
 // Tau gets the tau value for the edge
@@ -83,4 +102,27 @@ func (tsp *Tsp) Nu(n1, n2 *Node) float64 {
 // P calculates the p value for the edge
 func (tsp *Tsp) P(n1, n2 *Node) float64 {
 	return math.Pow(tsp.Tau(n1, n2), tsp.Alpha) * math.Pow(tsp.Nu(n1, n2), tsp.Beta)
+}
+
+// Solver is the interface for the main Ant Colony System algorithm
+type Solver interface {
+	Solve()
+}
+
+// === Some general functions below ===
+
+// IndexOf finds the index of node in the slice
+func IndexOf(n1 *Node, slc []Node) (int, error) {
+	for i := range slc {
+		if slc[i].ID == n1.ID {
+			return i, nil
+		}
+	}
+	return 0, errors.New("Node not in slice")
+}
+
+// Remove returns a slice with the designated element removed
+func Remove(n1 *Node, slc []Node) []Node {
+	indexToRemove, _ := IndexOf(n1, slc)
+	return append(slc[:indexToRemove], slc[indexToRemove+1:]...)
 }

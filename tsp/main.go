@@ -17,7 +17,7 @@ func main() {
 		check(errors.New("Please specify 7 command line arguments (filename, seed, alpha, beta, ro, antcount, itercount)"))
 	}
 	filename := os.Args[1]
-	vtsp.Seed, err = strconv.Atoi(os.Args[2])
+	vtsp.Seed, err = strconv.ParseInt(os.Args[2], 10, 64)
 	check(err)
 	vtsp.Alpha, err = strconv.ParseFloat(os.Args[3], 64)
 	check(err)
@@ -47,8 +47,14 @@ func main() {
 		i++
 	}
 	file.Close()
-
 	fmt.Println("* Successfully read file.")
+
+	fmt.Println("* Solving TSP sequentally...")
+	vtsp.Initialize()
+	seqSolver := tsp.SeqSolver{Tsp: &vtsp}
+	seqSolver.Solve()
+	fmt.Println("* Sequental solution done.")
+	fmt.Printf("Result: %v\n", seqSolver.BestPathLength)
 
 }
 
