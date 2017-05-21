@@ -136,6 +136,7 @@ type Ant struct {
 	Tsp         *Tsp
 	PathLength  float64
 	Done        bool
+	Rand		*rand.Rand
 }
 
 // Reset reinitializes the ant with an empty path

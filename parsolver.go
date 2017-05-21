@@ -2,6 +2,7 @@ package tsp
 
 import (
 	"math"
+	"math/rand"
 )
 
 // StartStepsPar makes the ant select the next node to construct their path
@@ -16,7 +17,7 @@ func (ant *Ant) StartStepsPar(solverChan chan []Node) {
 			pDenom += ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i])
 		}
 		// Select next node by calculating the p value
-		n := ant.Tsp.Rand.Float64()
+		n := ant.Rand.Float64()
 		movingSum := float64(0)
 		for i := range ant.Unvisited {
 			p := ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i]) / pDenom
@@ -53,9 +54,9 @@ func (solver *ParSolver) Solve() {
 	// Create ants
 	for i := 0; i < solver.Tsp.AntCount; i++ {
 		ant := Ant {ID: i, Tsp: solver.Tsp}
+		ant.Rand = rand.New(rand.NewSource(int64(ant.Tsp.Rand.Intn(999999999))))
 		solver.Ants = append(solver.Ants, ant)
 	}
-
 	// Run iterations
 	for itr := 0; itr < solver.Tsp.ItrCount; itr++ {
 		solver.Tsp.DoneAntCount = 0
