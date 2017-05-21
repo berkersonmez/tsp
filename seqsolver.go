@@ -2,75 +2,7 @@ package tsp
 
 import (
 	"math"
-	"fmt"
 )
-
-// Ant is the builder of the solution in the Ant Colony System
-type Ant struct {
-	ID          int
-	Path        []Node
-	Unvisited   []Node
-	CurrentNode Node
-	Tsp         *Tsp
-	PathLength  float64
-	Done        bool
-}
-
-// Reset reinitializes the ant with an empty path
-func (ant *Ant) Reset() {
-	ant.Unvisited = make([]Node, len(ant.Tsp.Nodes))
-	copy(ant.Unvisited, ant.Tsp.Nodes)
-	ant.Path = make([]Node, 0)
-	ant.CurrentNode = ant.Unvisited[ant.Tsp.Rand.Intn(len(ant.Unvisited))]
-	ant.Done = false
-	ant.PathLength = 0
-	ant.Path = append(ant.Path, ant.CurrentNode)
-	ant.Unvisited = Remove(&ant.CurrentNode, ant.Unvisited)
-}
-
-// Step makes the ant select the next node to construct their path
-func (ant *Ant) Step() {
-	if ant.Done {
-		return
-	}
-	// Calculate denominator of p value
-	pDenom := float64(0)
-	for i := range ant.Unvisited {
-		pDenom += ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i])
-	}
-	// Select next node by calculating the p value
-	n := ant.Tsp.Rand.Float64()
-	movingSum := float64(0)
-	for i := range ant.Unvisited {
-		p := ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i]) / pDenom
-		movingSum += p
-		if movingSum >= n {
-			ant.Path = append(ant.Path, ant.Unvisited[i])
-			ant.CurrentNode = ant.Unvisited[i]
-			ant.Unvisited = Remove(&ant.Unvisited[i], ant.Unvisited)
-			break
-		}
-	}
-	// Check if ant is done
-	if (len(ant.Unvisited) == 0) {
-		ant.Tsp.DoneAntCount++
-		ant.Done = true
-		ant.PathLength = ant.Tsp.Length(ant.Path)
-	}
-
-}
-
-// UpdatePheros updates pheromones according to ant's path
-func (ant *Ant) UpdatePheros() {
-	// Local pheromone update
-	deltaTau := ant.Tsp.Q / ant.PathLength
-	x := &ant.Path[0]
-	for i := range ant.Path[1:] {
-		y := &ant.Path[1:][i]
-		ant.Tsp.UpdatePhero(x, y, deltaTau)
-		x = y
-	}
-}
 
 // SeqSolver runs the Ant Colony System sequentally
 type SeqSolver struct {
@@ -108,7 +40,6 @@ func (solver *SeqSolver) Solve() {
 		}
 		// Find global (including previous iters) best path among the ant paths
 		for j := range solver.Ants {
-			fmt.Printf("DEBUG: Path length=%v\n",solver.Ants[j].PathLength)
 			if solver.Ants[j].PathLength < solver.BestPathLength {
 				solver.BestPathLength = solver.Ants[j].PathLength
 				solver.BestPath = make([]Node, len(solver.Ants[j].Path))

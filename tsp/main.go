@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"errors"
 	"github.com/berkersonmez/tsp"
+	"time"
 )
 
 func main() {
@@ -50,11 +51,22 @@ func main() {
 	fmt.Println("* Successfully read file.")
 
 	fmt.Println("* Solving TSP sequentally...")
+    seqTime := time.Now()
 	vtsp.Initialize()
 	seqSolver := tsp.SeqSolver{Tsp: &vtsp}
 	seqSolver.Solve()
 	fmt.Println("* Sequental solution done.")
 	fmt.Printf("Result: %v\n", seqSolver.BestPathLength)
+	fmt.Printf("Sequental solution execution time: %v\n", time.Since(seqTime))
+
+	fmt.Println("* Solving TSP paralelly...")
+	parTime := time.Now()
+	vtsp.Initialize()
+	parSolver := tsp.ParSolver{Tsp: &vtsp}
+	parSolver.Solve()
+	fmt.Println("* Parallel solution done.")
+	fmt.Printf("Result: %v\n", parSolver.BestPathLength)
+	fmt.Printf("Parallel solution execution time: %v\n", time.Since(parTime))
 
 }
 

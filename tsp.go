@@ -60,7 +60,7 @@ func (tsp *Tsp) SetPhero(n1, n2 *Node, phero float64) {
 
 // UpdatePhero increments the pheromone by value of delta
 func (tsp *Tsp) UpdatePhero(n1, n2 *Node, delta float64) {
-	tsp.SetPhero(n1, n2, tsp.Pheros[n1.ID][n2.ID])
+	tsp.SetPhero(n1, n2, tsp.Pheros[n1.ID][n2.ID] + delta)
 }
 
 // Initialize sets initial pheromones and distances
@@ -125,4 +125,71 @@ func IndexOf(n1 *Node, slc []Node) (int, error) {
 func Remove(n1 *Node, slc []Node) []Node {
 	indexToRemove, _ := IndexOf(n1, slc)
 	return append(slc[:indexToRemove], slc[indexToRemove+1:]...)
+}
+
+// Ant is the builder of the solution in the Ant Colony System
+type Ant struct {
+	ID          int
+	Path        []Node
+	Unvisited   []Node
+	CurrentNode Node
+	Tsp         *Tsp
+	PathLength  float64
+	Done        bool
+}
+
+// Reset reinitializes the ant with an empty path
+func (ant *Ant) Reset() {
+	ant.Unvisited = make([]Node, len(ant.Tsp.Nodes))
+	copy(ant.Unvisited, ant.Tsp.Nodes)
+	ant.Path = make([]Node, 0)
+	ant.CurrentNode = ant.Unvisited[ant.Tsp.Rand.Intn(len(ant.Unvisited))]
+	ant.Done = false
+	ant.PathLength = 0
+	ant.Path = append(ant.Path, ant.CurrentNode)
+	ant.Unvisited = Remove(&ant.CurrentNode, ant.Unvisited)
+}
+
+// Step makes the ant select the next node to construct their path
+func (ant *Ant) Step() {
+	if ant.Done {
+		return
+	}
+	// Calculate denominator of p value
+	pDenom := float64(0)
+	for i := range ant.Unvisited {
+		pDenom += ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i])
+	}
+	// Select next node by calculating the p value
+	n := ant.Tsp.Rand.Float64()
+	movingSum := float64(0)
+	for i := range ant.Unvisited {
+		p := ant.Tsp.P(&ant.CurrentNode, &ant.Unvisited[i]) / pDenom
+		movingSum += p
+		if movingSum >= n {
+			ant.Path = append(ant.Path, ant.Unvisited[i])
+			ant.CurrentNode = ant.Unvisited[i]
+			ant.Unvisited = Remove(&ant.Unvisited[i], ant.Unvisited)
+			break
+		}
+	}
+	// Check if ant is done
+	if (len(ant.Unvisited) == 0) {
+		ant.Tsp.DoneAntCount++
+		ant.Done = true
+		ant.PathLength = ant.Tsp.Length(ant.Path)
+	}
+
+}
+
+// UpdatePheros updates pheromones according to ant's path
+func (ant *Ant) UpdatePheros() {
+	// Local pheromone update
+	deltaTau := ant.Tsp.Q / ant.PathLength
+	x := &ant.Path[0]
+	for i := range ant.Path[1:] {
+		y := &ant.Path[1:][i]
+		ant.Tsp.UpdatePhero(x, y, deltaTau)
+		x = y
+	}
 }
